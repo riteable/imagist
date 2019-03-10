@@ -1,0 +1,32 @@
+{
+  "name": "imagist",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.16.4",
+    "express-boom": "^3.0.0",
+    "express-pino-logger": "^4.0.0",
+    "fastify": "^2.0.1",
+    "lodash": "^4.17.11",
+    "machinepack-http": "^7.0.2",
+    "sharp": "^0.21.3",
+    "stream-mmmagic": "^2.1.0",
+    "validator": "^10.11.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.15.1",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "nodemon": "^1.18.10"
+  },
+  "scripts": {
+    "dev": "nodemon ./index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
