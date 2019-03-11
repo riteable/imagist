@@ -46,6 +46,11 @@ const allowedInterpolations = [
 ]
 const allowedFormats = Object.values(allowedMimeTypes)
 const allowedFlips = ['h', 'v', 'both']
+const urlValidationOptions = {
+  protocols: ['http', 'https'],
+  require_tld: false,
+  require_protocol: true
+}
 
 async function checkMimeType (reader) {
   return new Promise((resolve, reject) => {
@@ -252,12 +257,6 @@ async function processImage (reader, mimeType, options = {}) {
 }
 
 exports.index = (req, res, next) => {
-  const urlValidationOptions = {
-    protocols: ['http', 'https'],
-    require_tld: false,
-    require_protocol: true
-  }
-
   const imageOptions = getImageOptions(req.query)
 
   if (typeof req.params['0'] === 'undefined') {
