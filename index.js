@@ -8,7 +8,7 @@ const sharp = require('sharp')
 function imagist (opts = {}) {
   const _defaults = {
     rootDir: process.cwd(),
-    hostname: null,
+    host: null,
     allowedHosts: []
   }
 
@@ -252,10 +252,19 @@ function imagist (opts = {}) {
     return [responseMimeType, reader.pipe(processing)]
   }
 
-  function _getParsedUrl (param, query) {
-    let url = (typeof query.ssl === 'undefined' ? 'http' : 'https') + '://' + query.host + '/' + param
+  function _parseRemoteUrl (src, host, ssl = false) {
+    let url = src
+    let protocol = 'http'
 
-    return new URL(url)
+    if (host && url.indexOf(host) === -1) {
+      url = path.join(host, src)
+    }
+
+    if (ssl) {
+      protocol = 'https'
+    }
+
+    return new URL(protocol + '://' + url)
   }
 
   async function _streamMimeType (reader) {
@@ -274,21 +283,67 @@ function imagist (opts = {}) {
     })
   }
 
-  async function _main (param, query = {}) {
+  function _pathExists (filePath) {
+    return new Promise((resolve, reject) => {
+      fs.access(filePath, (err) => {
+        if (err) {
+          return reject(err)
+        }
+
+        return resolve(true)
+      })
+    })
+  }
+
+  function _getRemoteFileStream (url) {
+    return mhttp.getStream({ url })
+  }
+
+  async function _getLocalFileStream (file) {
+    await _pathExists(file)
+
+    return fs.createReadStream(file)
+  }
+
+  function _isHostAllowed (host) {
+    if (!_options.allowedHosts.length) {
+      return true
+    }
+
+    if (_options.allowedHosts.includes(host)) {
+      return true
+    }
+
+    return false
+  }
+
+  async function _main (req) {
     let stream
+    const query = req.query
+    const params = req.params
+    const src = params['0']
+    const host = query.host || _options.host
+    const ssl = typeof query.ssl !== 'undefined'
 
-    if (_options.hostname || query.host) {
-      query.host = query.host || _options.hostname
-      let url = _getParsedUrl(param, query)
+    if (!src) {
+      throw new TypeError('Source path is missing.')
+    }
 
-      if (_options.allowedHosts.length && !_options.allowedHosts.includes(url.hostname)) {
-        throw new TypeError('Hostname not allowed.')
+    if (_options.host) {
+      _options.allowedHosts.push(_options.host)
+    }
+
+    if (host) {
+      let url = _parseRemoteUrl(src, host, ssl)
+
+      if (!_isHostAllowed(url.hostname)) {
+        throw new TypeError('Host not allowed.')
       }
 
-      stream = await mhttp.getStream({ url: url.href })
+      stream = await _getRemoteFileStream(url.href)
     } else {
-      let filePath = path.join(_options.rootDir, param)
-      stream = fs.createReadStream(filePath)
+      let file = path.join(_options.rootDir, src)
+      stream = await _getLocalFileStream(file)
     }
 
     const [mimeType, reader] = await _streamMimeType(stream)
@@ -297,9 +352,7 @@ function imagist (opts = {}) {
 
   function expressMiddleware (options = {}) {
     return (req, res, next) => {
-      const url = req.params['0']
-
-      _main(url, req.query)
+      _main(req)
         .then(([mimeType, reader]) => {
           res.set('content-type', mimeType)
           reader.pipe(res)
