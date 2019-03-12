@@ -253,15 +253,7 @@ function imagist (opts = {}) {
   }
 
   function _getParsedUrl (param, query) {
-    let url = typeof param === 'string' ? param : ''
-
-    if (url.indexOf('/') === 0) {
-      url = url.substring(1)
-    }
-
-    if (url.indexOf('http') === -1) {
-      url = (typeof query.ssl === 'undefined' ? 'http' : 'https') + '://' + url
-    }
+    let url = (typeof query.ssl === 'undefined' ? 'http' : 'https') + '://' + query.host + '/' + param
 
     return new URL(url)
   }
@@ -286,13 +278,14 @@ function imagist (opts = {}) {
     let stream
 
     if (_options.hostname || query.host) {
+      query.host = query.host || _options.hostname
       let url = _getParsedUrl(param, query)
 
       if (_options.allowedHosts.length && !_options.allowedHosts.includes(url.hostname)) {
         throw new TypeError('Hostname not allowed.')
       }
 
-      stream = await mhttp.getStream({ url })
+      stream = await mhttp.getStream({ url: url.href })
     } else {
       let filePath = path.join(_options.rootDir, param)
       stream = fs.createReadStream(filePath)
