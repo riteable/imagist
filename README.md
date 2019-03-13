@@ -4,7 +4,7 @@ On-the-fly image optimization & manipulation middleware.
 
 ## Why
 
-Managing image assets can be a real problem. You often might need several sizes and different aspect ratios to fit within the context of your UI. Rendering different versions of an image before uploading them to your server is an option, but it's cumbersome. That's where this middleware comes in handy. You only need to upload one canonical image, so you can request different versions on-the-fly via the `src` attribute of the `img` element. It's basically what paid services like Cloudinary offer.
+Managing image assets can be a real problem. You often might need several sizes and different aspect ratios to make them fit in the UI. Rendering different versions of an image before uploading them to your server is an option, but it's cumbersome. And design specs change all the time. That's where this middleware comes in handy. You only need to upload one canonical image, so you can request different versions on-the-fly via the `src` attribute of the `img` element. It's basically what paid services like Cloudinary offer.
 
 For example, where you would normally do the following:
 
@@ -16,9 +16,11 @@ You can now do something like this:
 
 Notice the `/images` prefix. This is the route that handles the processing. Also, the query parameters will make sure the image is cropped to 300x300 px. (See all available transformations below.)
 
-**NOTE:** Because the module has to process and render a new image on each request, it works best when the URL is cached by a CDN. That way, only the first request will be slow and heavy on resources while the image is rendered, but all subsequent requests will be handled by the CDN.
+**NOTE:** This module doesn't cache or store the processed images anywhere itself. It streams the image directly to the output (browser) while it's processing it. Because the module has to render the image on each request, it works best when the URL is cached by a CDN. That way, only the first request will be slower and heavy on resources while the image is rendered, but all subsequent requests will be handled by the CDN.
 
 ## Installation
+
+This is a Node.js module, and can be installed using npm.
 
     npm i imagist
 
@@ -102,9 +104,9 @@ With the `.get()` function, an image is fetched from a URL and returned as a str
 
 Available options for the `imagist(opts = {})` function are the following:
 
-- **host**: [String]. Specify the main host where your images are stored. So, something like `'mydomain.com'`, or `'mydomain.cloudstorage.com'`. This option is not required, but if you don't set it, you have to set it in the URL when requesting the image, like so:
+- **host**: [String]. Specify the main host where your images are stored. Something like `'mydomain.com'`, or `'mydomain.cloudstorage.com'`. This option is not required, but if you don't set it, you have to set it in the URL when requesting the image, like so:
 
-    `<img src="https://cdn.mydomain.com/images/mydomain.com/path/to/image.jpg">`
+    `<img src="https://cdn.mydomain.com/images/mydomain.cloudstorage.com/path/to/image.jpg">`
 
 - **whitelist**: [String|Array]. A list of trusted hosts. This whitelist makes sure that only images from trusted hosts are processed. If you've set the `host` option, it is automatically added to the whitelist.
 
@@ -112,14 +114,14 @@ Available options for the `imagist(opts = {})` function are the following:
 
 ## Available transformations
 
-The transformations below are available to use as query parameters when requesting an image, or as the second argument of the `.get()` function.
+The transformations below are available to use as query parameters when requesting an image, or as the second argument of the `.get(url, {})` function.
 
 - **w**: Desired width in pixels. If it is not specified, it will depend on other parameters what the output width will be. For example, if height is specified, the width will scale relative to the height value respecting the aspect ratio.
 
 - **h**: Desired height in pixels. See width behavior.
 
 - **fit**: Type of fit. Possible values:
-    - `'cover'` *(default)*: Same as CSS `background-size: cover`. If the proportions of the image differ from the element, it is cropped either vertically or horizontally so that no empty space remains.
+    - `'cover'`: *(default)*. Same as CSS `background-size: cover`. If the proportions of the image differ from the element, it is cropped either vertically or horizontally so that no empty space remains.
     - `'contain'`: Same as CSS `background-size: contain`. Scales the image as large as possible without cropping or stretching the image.
     - `'inside'`: Resize the image to be as large as possible while ensuring its dimensions are less than or equal to both those specified.
     - `'outside'`: Resize the image to be as small as possible while ensuring its dimensions are greater than or equal to both those specified.
@@ -137,9 +139,9 @@ The transformations below are available to use as query parameters when requesti
     - `'entropy'`: Focus on the region with the highest [entropy](https://en.wikipedia.org/wiki/Entropy_%28information_theory%29).
     - `'attention'`: Focus on the region with the highest luminance frequency, color saturation and presence of skin tones.
 
-- **trim**: *(default: `false`)* Trim unnecessary pixels from the image. Imagine the image having a white (or some other color) border around the edges. This option will crop the image to only contain the necessary part of the image. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **trim**: *(default: `false`)*. Trim unnecessary pixels from the image. Imagine the image having a white (or some other color) border around the edges. This option will crop the image to only contain the necessary part of the image. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
-- **max**: *(default: `false`)* Enlarge the image to the specified width and height, if the source image is smaller. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **max**: *(default: `false`)*. Enlarge the image to the specified width and height, if the source image is smaller. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
 
 - **flip**: How to flip/mirror the image. Possible values:
@@ -172,9 +174,13 @@ The transformations below are available to use as query parameters when requesti
 
 - **gs**: Turn the image black and white (greyscale). No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
-- **meta**: *(default: `false`)* Output with metadata (EXIF, XMP, IPTC), if present in the source file. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **meta**: *(default: `false`)*. Output with metadata (EXIF, XMP, IPTC), if present in the source file. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
 - **fmt**: Output format. Default behavior is to output the same format as the source. If the source has an unsupported output format, it will default to `'jpeg'`. Possible values:
     - `'jpeg'`
     - `'png'`
     - `'webp'`
+
+## Tests
+
+No tests have been written yet.
