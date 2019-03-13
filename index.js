@@ -1,15 +1,14 @@
-const path = require('path')
-const fs = require('fs')
 const validator = require('validator')
 const mhttp = require('machinepack-http')
 const mmm = require('stream-mmmagic')
 const sharp = require('sharp')
+const color = require('color')
 
 function imagist (opts = {}) {
   const _defaults = {
-    rootDir: process.cwd(),
+    ssl: false,
     host: null,
-    allowedHosts: []
+    whitelist: []
   }
 
   const _options = Object.assign({}, _defaults, opts)
@@ -35,23 +34,14 @@ function imagist (opts = {}) {
   ]
 
   const _allowedPositions = [
-    'north',
-    'northeast',
-    'east',
-    'southeast',
-    'south',
-    'southwest',
-    'west',
-    'northwest',
+    'top',
+    'bottom',
+    'left',
+    'right',
     'center',
-    'detail',
-    'luminance'
+    'entropy',
+    'attention'
   ]
-
-  const _renamedPositions = {
-    detail: 'entropy',
-    luminance: 'attention'
-  }
 
   const _allowedInterpolations = [
     'nearest',
@@ -81,6 +71,48 @@ function imagist (opts = {}) {
     }
 
     return val
+  }
+
+  function _colorType (val) {
+    if (val.indexOf(',') > -1) {
+      return 'rgb'
+    }
+
+    if (val.length === 3 || val.length === 6) {
+      return 'hex'
+    }
+
+    return null
+  }
+
+  function _isValidColor (val) {
+    const type = _colorType(val)
+
+    if (type === 'rgb') {
+      val = `rgb(${val})`
+    } else if (type === 'hex') {
+      val = '#' + val
+    }
+
+    try {
+      color(val)
+    } catch (err) {
+      return false
+    }
+
+    return true
+  }
+
+  function _normalizeColor (val) {
+    const type = _colorType(val)
+
+    if (type === 'rgb') {
+      val = val.split(',').map(v => parseFloat(v, 10))
+    } else if (type === 'hex') {
+      val = '#' + val
+    }
+
+    return color(val).object()
   }
 
   function _findKey (obj, func) {
@@ -134,14 +166,6 @@ function imagist (opts = {}) {
 
     if (query.pos && _allowedPositions.includes(query.pos)) {
       options.resize.options.position = query.pos
-
-      if (Object.keys(_renamedPositions).includes(query.pos)) {
-        options.resize.options.position = _renamedPositions[query.pos]
-
-        if (typeof options.resize.options.fit !== 'undefined' && options.resize.options.fit !== 'cover') {
-          delete options.resize.options.position
-        }
-      }
     }
 
     if (query.flip && _allowedFlips.includes(query.flip)) {
@@ -149,7 +173,7 @@ function imagist (opts = {}) {
         options.flop = true
       } else if (query.flip === 'v') {
         options.flip = true
-      } else {
+      } else if (query.flip === 'both') {
         options.flip = true
         options.flop = true
       }
@@ -163,8 +187,8 @@ function imagist (opts = {}) {
       options.resize.options.kernel = query.i
     }
 
-    if (query.bg && validator.isHexColor(query.bg)) {
-      options.resize.options.background = query.bg
+    if (query.bg && _isValidColor(query.bg)) {
+      options.resize.options.background = _normalizeColor(query.bg)
     }
 
     if (query.fmt && Object.keys(_supportedOutputFormats).includes(query.fmt)) {
@@ -175,8 +199,8 @@ function imagist (opts = {}) {
       options.rotate = _toInteger(query.r)
     }
 
-    if (query.tint && validator.isHexColor(query.tint)) {
-      options.tint = query.tint
+    if (query.tint && _isValidColor(query.tint)) {
+      options.tint = _normalizeColor(query.tint)
     }
 
     if (query.blur && validator.isFloat(query.blur, { min: 0.3, max: 1000 })) {
@@ -249,22 +273,26 @@ function imagist (opts = {}) {
     responseMimeType = _supportedOutputFormats[options.format]
     processing.toFormat(options.format, formatOptions)
 
-    return [responseMimeType, reader.pipe(processing)]
+    return [reader.pipe(processing), responseMimeType]
   }
 
-  function _parseRemoteUrl (src, host, ssl = false) {
-    let url = src
+  function _parseUrl (param) {
     let protocol = 'http'
+    let url = param
 
-    if (host && url.indexOf(host) === -1) {
-      url = path.join(host, src)
-    }
-
-    if (ssl) {
+    if (_options.ssl) {
       protocol = 'https'
     }
 
-    return new URL(protocol + '://' + url)
+    if (_options.host && param.indexOf(_options.host) === -1) {
+      url = _options.host + '/' + param
+    }
+
+    if (param.indexOf('http://') === -1 && param.indexOf('https://') === -1) {
+      url = protocol + '://' + url
+    }
+
+    return new URL(url)
   }
 
   async function _streamMimeType (reader) {
@@ -278,91 +306,93 @@ function imagist (opts = {}) {
           return reject(new Error('MIME type not allowed.'))
         }
 
-        return resolve([mime.type, output])
+        return resolve([output, mime.type])
       })
     })
-  }
-
-  function _pathExists (filePath) {
-    return new Promise((resolve, reject) => {
-      fs.access(filePath, (err) => {
-        if (err) {
-          return reject(err)
-        }
-
-        return resolve(true)
-      })
-    })
-  }
-
-  function _getRemoteFileStream (url) {
-    return mhttp.getStream({ url })
-  }
-
-  async function _getLocalFileStream (file) {
-    await _pathExists(file)
-
-    return fs.createReadStream(file)
   }
 
   function _isHostAllowed (host) {
-    if (!_options.allowedHosts.length) {
+    if (!_options.whitelist.length) {
       return true
     }
 
-    if (_options.allowedHosts.includes(host)) {
+    if (_options.whitelist.includes(host)) {
       return true
     }
 
     return false
   }
 
-  async function _main (req) {
-    let stream
-    const query = req.query
-    const params = req.params
-    const src = params['0']
-    const host = query.host || _options.host
-    const ssl = typeof query.ssl !== 'undefined'
-
-    if (!src) {
+  async function main (param, query) {
+    if (!param) {
       throw new TypeError('Source path is missing.')
     }
 
+    if (!Array.isArray(_options.whitelist)) {
+      _options.whitelist = _options.whitelist ? [_options.whitelist] : []
+    }
+
     if (_options.host) {
-      _options.allowedHosts.push(_options.host)
+      _options.whitelist.push(_options.host)
     }
 
-    if (host) {
-      let url = _parseRemoteUrl(src, host, ssl)
+    let url = _parseUrl(param)
 
-      if (!_isHostAllowed(url.hostname)) {
-        throw new TypeError('Host not allowed.')
-      }
-
-      stream = await _getRemoteFileStream(url.href)
-    } else {
-      let file = path.join(_options.rootDir, src)
-      stream = await _getLocalFileStream(file)
+    if (!_isHostAllowed(url.hostname)) {
+      throw new TypeError('Host not allowed.')
     }
 
-    const [mimeType, reader] = await _streamMimeType(stream)
+    const stream = await mhttp.getStream({ url: url.href })
+    const [reader, mimeType] = await _streamMimeType(stream)
     return _processImage(reader, mimeType, query)
   }
 
-  function expressMiddleware (options = {}) {
+  function expressMiddleware () {
     return (req, res, next) => {
-      _main(req)
-        .then(([mimeType, reader]) => {
-          res.set('content-type', mimeType)
-          reader.pipe(res)
+      const query = req.query
+      const params = req.params
+      const param = params['0']
+
+      main(param, query)
+        .then(([stream, type]) => {
+          res.set('Content-Type', type)
+          stream.pipe(res)
         })
         .catch(next)
     }
   }
 
+  function koaMiddleware () {
+    return async (ctx) => {
+      const query = ctx.query
+      const params = ctx.params
+      const param = params['0']
+
+      const [stream, type] = await main(param, query)
+
+      ctx.set('Content-Type', type)
+      ctx.body = stream
+    }
+  }
+
+  function fastifyMiddleware () {
+    return async (req, res) => {
+      const query = req.query
+      const params = req.params
+      const param = params['*']
+
+      const [stream, type] = await main(param, query)
+
+      res.header('Content-Type', type)
+      res.send(stream)
+    }
+  }
+
   return {
-    express: expressMiddleware
+    get: main,
+    express: expressMiddleware,
+    koa: koaMiddleware,
+    fastify: fastifyMiddleware
   }
 }
 

@@ -4,6 +4,7 @@
   "description": "Middleware for on-the-fly image processing.",
   "main": "index.js",
   "dependencies": {
+    "color": "^3.1.0",
     "machinepack-http": "^7.0.2",
     "sharp": "^0.21.3",
     "stream-mmmagic": "^2.1.0",
