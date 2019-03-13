@@ -4,7 +4,7 @@ On-the-fly image optimization & manipulation middleware.
 
 ## Why
 
-Managing image assets can be a a real problem. You often might need different sizes with different aspect ratios to fit perfectly within the context of your UI elements. Rendering different versions of an image before uploading them to your server is an option, but what if the design of the UI changes? Which it most certainly will. You'll probably need to render new versions of all those images all over again. That's where this middleware comes in handy. You only need to upload one canonical image, and request different versions on-the-fly via the `src` attribute of the `img` element.
+Managing image assets can be a a real problem. You often might need different sizes with different aspect ratios to fit perfectly within the context of your UI elements. Rendering different versions of an image before uploading them to your server is an option, but what if the design of the UI changes? Which it most certainly will. You'll probably need to render new versions of all those images all over again. That's where this middleware comes in handy. You only need to upload one canonical image, and request different versions on-the-fly via the `src` attribute of the `img` element. It's basically what paid services like [Cloudinary](https://cloudinary.com) offer.
 
 For example, where you would normally do the following:
     
