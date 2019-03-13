@@ -207,27 +207,27 @@ function imagist (opts = {}) {
       options.blur = validator.toFloat(query.blur, 10)
     }
 
-    if (typeof query.trim !== 'undefined' && validator.toBoolean(query.trim)) {
+    if (query.trim) {
       options.trim = 10
     }
 
-    if (typeof query.max !== 'undefined' && validator.toBoolean(query.max)) {
+    if (query.max) {
       options.resize.options.withoutEnlargement = false
     }
 
-    if (typeof query.sharp !== 'undefined' && validator.toBoolean(query.sharp)) {
+    if (query.sharp) {
       options.sharp = true
     }
 
-    if (typeof query.neg !== 'undefined' && validator.toBoolean(query.neg)) {
+    if (query.neg) {
       options.negate = true
     }
 
-    if (typeof query.gs !== 'undefined' && validator.toBoolean(query.gs)) {
+    if (query.gs) {
       options.greyscale = true
     }
 
-    if (typeof query.meta !== 'undefined' && validator.toBoolean(query.meta)) {
+    if (query.meta) {
       options.withMetadata = true
     }
 

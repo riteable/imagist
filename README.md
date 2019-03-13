@@ -139,9 +139,9 @@ The transformations below are available to use as query parameters when requesti
     - `'entropy'`: Focus on the region with the highest [entropy](https://en.wikipedia.org/wiki/Entropy_%28information_theory%29).
     - `'attention'`: Focus on the region with the highest luminance frequency, color saturation and presence of skin tones.
 
-- **trim**: *(default: `false`)*. Trim unnecessary pixels from the image. Imagine the image having a white (or some other color) border around the edges. This option will crop the image to only contain the necessary part of the image. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **trim**: *(default: `false`)*. Trim unnecessary pixels from the image. Imagine the image having a white (or some other color) border around the edges. This option will crop the image to only contain the necessary part of the image. Possible values: [falsy/truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
-- **max**: *(default: `false`)*. Enlarge the image to the specified width and height, if the source image is smaller. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **max**: *(default: `false`)*. Enlarge the image to the specified width and height, if the source image is smaller. Possible values: [falsy/truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
 
 - **flip**: How to flip/mirror the image. Possible values:
@@ -168,13 +168,13 @@ The transformations below are available to use as query parameters when requesti
 
 - **blur**: Blur the image. Possible values between `0.3` and `1000`.
 
-- **sharp**: Sharpen the image. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **sharp**: Sharpen the image. Possible values: [falsy/truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
-- **neg**: Turn the image to a negative. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **neg**: Turn the image to a negative. Possible values: [falsy/truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
-- **gs**: Turn the image black and white (greyscale). No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **gs**: Turn the image black and white (greyscale). Possible values: [falsy/truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
-- **meta**: *(default: `false`)*. Output with metadata (EXIF, XMP, IPTC), if present in the source file. No value required, or has to be [truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
+- **meta**: *(default: `false`)*. Output with metadata (EXIF, XMP, IPTC), if present in the source file. Possible values: [falsy/truthy](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).
 
 - **fmt**: Output format. Default behavior is to output the same format as the source. If the source has an unsupported output format, it will default to `'jpeg'`. Possible values:
     - `'jpeg'`
