@@ -195,8 +195,8 @@ function imagist (opts = {}) {
       options.format = query.fmt
     }
 
-    if (query.r) {
-      options.rotate = _toInteger(query.r)
+    if (query.r && validator.isFloat(query.r)) {
+      options.rotate = validator.toFloat(query.r)
     }
 
     if (query.tint && _isValidColor(query.tint)) {
@@ -207,27 +207,27 @@ function imagist (opts = {}) {
       options.blur = validator.toFloat(query.blur, 10)
     }
 
-    if (typeof query.trim !== 'undefined') {
+    if (typeof query.trim !== 'undefined' && validator.toBoolean(query.trim)) {
       options.trim = 10
     }
 
-    if (typeof query.max !== 'undefined') {
+    if (typeof query.max !== 'undefined' && validator.toBoolean(query.max)) {
       options.resize.options.withoutEnlargement = false
     }
 
-    if (typeof query.sharp !== 'undefined') {
+    if (typeof query.sharp !== 'undefined' && validator.toBoolean(query.sharp)) {
       options.sharp = true
     }
 
-    if (typeof query.neg !== 'undefined') {
+    if (typeof query.neg !== 'undefined' && validator.toBoolean(query.neg)) {
       options.negate = true
     }
 
-    if (typeof query.gs !== 'undefined') {
+    if (typeof query.gs !== 'undefined' && validator.toBoolean(query.gs)) {
       options.greyscale = true
     }
 
-    if (typeof query.meta !== 'undefined') {
+    if (typeof query.meta !== 'undefined' && validator.toBoolean(query.meta)) {
       options.withMetadata = true
     }
 
@@ -235,6 +235,7 @@ function imagist (opts = {}) {
   }
 
   async function _processImage (reader, mimeType, query = {}) {
+    let responseMimeType = mimeType
     const options = _queryOptions(query)
     const processing = sharp()
     const formatOptions = {}
@@ -250,7 +251,6 @@ function imagist (opts = {}) {
       'greyscale',
       'withMetadata'
     ]
-    let responseMimeType = mimeType
 
     methods.forEach(method => {
       if (options[method]) {
@@ -350,8 +350,7 @@ function imagist (opts = {}) {
   function expressMiddleware () {
     return (req, res, next) => {
       const query = req.query
-      const params = req.params
-      const param = params['0']
+      const param = req.params['0']
 
       main(param, query)
         .then(([stream, type]) => {
@@ -365,8 +364,7 @@ function imagist (opts = {}) {
   function koaMiddleware () {
     return async (ctx) => {
       const query = ctx.query
-      const params = ctx.params
-      const param = params['0']
+      const param = ctx.params['0']
 
       const [stream, type] = await main(param, query)
 
@@ -378,8 +376,7 @@ function imagist (opts = {}) {
   function fastifyMiddleware () {
     return async (req, res) => {
       const query = req.query
-      const params = req.params
-      const param = params['*']
+      const param = req.params['*']
 
       const [stream, type] = await main(param, query)
 
