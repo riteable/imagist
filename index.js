@@ -59,108 +59,106 @@ function imagist (opts = {}) {
 
   function _queryOptions (query) {
     const options = {
-      resize: {
-        width: null,
-        height: null,
-        options: {
+      resize: [
+        null, null, {
           fit: 'cover',
           position: 'center',
           kernel: 'lanczos3',
           withoutEnlargement: true,
           background: '#000'
         }
-      },
-      withMetadata: false,
-      quality: 80,
-      trim: false,
-      rotate: 0,
-      flip: false,
-      flop: false,
-      sharpen: false,
-      blur: false,
-      negate: false,
-      tint: false,
-      greyscale: false,
-      format: null
+      ],
+      format: [null, { quality: 80 }],
+      withMetadata: [false],
+      trim: [false],
+      rotate: [0, { background: '#000' }],
+      flip: [false],
+      flop: [false],
+      sharpen: [false],
+      blur: [false],
+      negate: [false],
+      tint: [false],
+      greyscale: [false]
     }
 
     if (query.w) {
-      options.resize.width = Math.abs(util.toInt(query.w)) || null
+      options.resize[0] = Math.abs(util.toInt(query.w)) || null
     }
 
     if (query.h) {
-      options.resize.height = Math.abs(util.toInt(query.h)) || null
+      options.resize[1] = Math.abs(util.toInt(query.h)) || null
     }
 
     if (query.fit && _allowedFits.includes(query.fit)) {
-      options.resize.options.fit = query.fit
+      options.resize[2].fit = query.fit
+    }
+
+    if (query.i && _allowedInterpolations.includes(query.i)) {
+      options.resize[2].kernel = query.i
     }
 
     if (query.pos && _allowedPositions.includes(query.pos)) {
-      options.resize.options.position = query.pos
+      options.resize[2].position = query.pos
+    }
+
+    if (query.max) {
+      options.resize[2].withoutEnlargement = false
+    }
+
+    if (query.bg && util.isValidColor(query.bg)) {
+      options.resize[2].background = util.normalizeColor(query.bg)
+    }
+
+    if (query.fmt && Object.keys(_supportedOutputFormats).includes(query.fmt)) {
+      options.format[0] = query.fmt
+    }
+
+    if (query.q && validator.isInt(query.q, { min: 1, max: 100 })) {
+      options.format[1].quality = Math.abs(util.toInt(query.q))
     }
 
     if (query.flip && _allowedFlips.includes(query.flip)) {
       if (query.flip === 'h') {
-        options.flop = true
+        options.flop[0] = true
       } else if (query.flip === 'v') {
-        options.flip = true
+        options.flip[0] = true
       } else if (query.flip === 'both') {
-        options.flip = true
-        options.flop = true
+        options.flip[0] = true
+        options.flop[0] = true
       }
     }
 
-    if (query.q && validator.isInt(query.q, { min: 1, max: 100 })) {
-      options.quality = Math.abs(util.toInt(query.q))
-    }
-
-    if (query.i && _allowedInterpolations.includes(query.i)) {
-      options.resize.options.kernel = query.i
-    }
-
-    if (query.bg && util.isValidColor(query.bg)) {
-      options.resize.options.background = util.normalizeColor(query.bg)
-    }
-
-    if (query.fmt && Object.keys(_supportedOutputFormats).includes(query.fmt)) {
-      options.format = query.fmt
-    }
-
     if (query.r && validator.isFloat(query.r)) {
-      options.rotate = validator.toFloat(query.r)
+      options.rotate[0] = validator.toFloat(query.r)
+      options.rotate[1].background = options.resize[2].background
     }
 
     if (query.tint && util.isValidColor(query.tint)) {
-      options.tint = util.normalizeColor(query.tint)
+      options.tint[0] = util.normalizeColor(query.tint)
     }
 
     if (query.blur && validator.isFloat(query.blur, { min: 0.3, max: 1000 })) {
-      options.blur = validator.toFloat(query.blur, 10)
+      options.blur[0] = validator.toFloat(query.blur, 10)
     }
 
     if (query.trim) {
-      options.trim = 10
-    }
-
-    if (query.max) {
-      options.resize.options.withoutEnlargement = false
+      options.trim[0] = 10
     }
 
     if (query.sharp) {
-      options.sharp = true
+      options.sharp[0] = true
     }
 
     if (query.neg) {
-      options.negate = true
+      options.negate[0] = true
     }
 
     if (query.gs) {
-      options.greyscale = true
+      options.greyscale[0] = true
     }
 
     if (query.meta) {
-      options.withMetadata = true
+      options.withMetadata[0] = true
     }
 
     return options
@@ -170,7 +168,6 @@ function imagist (opts = {}) {
     let responseMimeType = mimeType
     const options = _queryOptions(query)
     const processing = sharp()
-    const formatOptions = {}
     const methods = [
       'trim',
       'rotate',
@@ -185,25 +182,21 @@ function imagist (opts = {}) {
     ]
 
     methods.forEach(method => {
-      if (options[method]) {
-        processing[method](options[method])
+      if (options[method][0]) {
+        processing[method].apply(processing, options[method])
       }
     })
 
-    if (options.resize.width || options.resize.height) {
-      processing.resize(options.resize.width, options.resize.height, options.resize.options)
+    if (options.resize[0] || options.resize[1]) {
+      processing.resize.apply(processing, options.resize)
     }
 
-    if (options.quality) {
-      formatOptions.quality = options.quality
-    }
-
-    if (!options.format) {
-      options.format = util.findKey(_supportedOutputFormats, type => type === mimeType) || 'jpeg'
+    if (!options.format[0]) {
+      options.format[0] = util.findKey(_supportedOutputFormats, type => type === mimeType) || 'jpeg'
     }
 
     responseMimeType = _supportedOutputFormats[options.format]
-    processing.toFormat(options.format, formatOptions)
+    processing.toFormat.apply(processing, options.format)
 
     return [reader.pipe(processing), responseMimeType]
   }
