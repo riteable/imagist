@@ -195,7 +195,7 @@ function imagist (opts = {}) {
       options.format[0] = util.findKey(_supportedOutputFormats, type => type === mimeType) || 'jpeg'
     }
 
-    responseMimeType = _supportedOutputFormats[options.format]
+    responseMimeType = _supportedOutputFormats[options.format[0]]
     processing.toFormat.apply(processing, options.format)
 
     return [reader.pipe(processing), responseMimeType]
