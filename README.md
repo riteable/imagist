@@ -31,12 +31,12 @@ At the moment, only Express, Koa, and Fastify middleware functions are included.
 ### Express
 
     const express = require('express')
-    const imagist = require('imagist')
+    const imagist = require('imagist/express')
 
     const app = express()
     const imagistExpress = imagist({
         host: 'cdn.mydomain.com'
-    }).express
+    })
 
     app.use('/images/*', imagistExpress())
 
@@ -46,14 +46,14 @@ At the moment, only Express, Koa, and Fastify middleware functions are included.
 
     const Koa = require('koa')
     const Router = require('koa-router')
-    const imagist = require('imagist')
+    const imagist = require('imagist/koa')
 
     const app = new Koa()
     const router = new Router()
 
     const imagistKoa = imagist({
         host: 'cdn.mydomain.com'
-    }).koa
+    })
 
     router.get('/images/*', imagistKoa())
 
@@ -64,13 +64,13 @@ At the moment, only Express, Koa, and Fastify middleware functions are included.
 ### Fastify
 
     const fastify = require('fastify')
-    const imagist = require('imagist')
+    const imagist = require('imagist/fastify')
 
     const app = fastify()
 
     const imagistFastify = imagist({
         host: 'cdn.mydomain.com'
-    }).fastify
+    })
 
     app.get('/images/*', imagistFastify())
 

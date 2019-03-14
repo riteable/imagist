@@ -2,7 +2,7 @@ const validator = require('validator')
 const mhttp = require('machinepack-http')
 const mmm = require('stream-mmmagic')
 const sharp = require('sharp')
-const color = require('color')
+const util = require('./util')
 
 function imagist (opts = {}) {
   const _defaults = {
@@ -57,74 +57,6 @@ function imagist (opts = {}) {
     'both'
   ]
 
-  function _toInteger (val, unsigned = false) {
-    if (typeof val === 'string') {
-      val = validator.toInt(val, 10)
-    }
-
-    if (isNaN(val)) {
-      return 0
-    }
-
-    if (unsigned) {
-      val = Math.abs(val)
-    }
-
-    return val
-  }
-
-  function _colorType (val) {
-    if (val.indexOf(',') > -1) {
-      return 'rgb'
-    }
-
-    if (val.length === 3 || val.length === 6) {
-      return 'hex'
-    }
-
-    return null
-  }
-
-  function _isValidColor (val) {
-    const type = _colorType(val)
-
-    if (type === 'rgb') {
-      val = `rgb(${val})`
-    } else if (type === 'hex') {
-      val = '#' + val
-    }
-
-    try {
-      color(val)
-    } catch (err) {
-      return false
-    }
-
-    return true
-  }
-
-  function _normalizeColor (val) {
-    const type = _colorType(val)
-
-    if (type === 'rgb') {
-      val = val.split(',').map(v => parseFloat(v, 10))
-    } else if (type === 'hex') {
-      val = '#' + val
-    }
-
-    return color(val).object()
-  }
-
-  function _findKey (obj, func) {
-    for (const key in obj) {
-      if (func(obj[key])) {
-        return key
-      }
-    }
-
-    return undefined
-  }
-
   function _queryOptions (query) {
     const options = {
       resize: {
@@ -153,11 +85,11 @@ function imagist (opts = {}) {
     }
 
     if (query.w) {
-      options.resize.width = _toInteger(query.w, true)
+      options.resize.width = Math.abs(util.toInt(query.w)) || null
     }
 
     if (query.h) {
-      options.resize.height = _toInteger(query.h, true)
+      options.resize.height = Math.abs(util.toInt(query.h)) || null
     }
 
     if (query.fit && _allowedFits.includes(query.fit)) {
@@ -180,15 +112,15 @@ function imagist (opts = {}) {
     }
 
     if (query.q && validator.isInt(query.q, { min: 1, max: 100 })) {
-      options.quality = _toInteger(query.q, true)
+      options.quality = Math.abs(util.toInt(query.q))
     }
 
     if (query.i && _allowedInterpolations.includes(query.i)) {
       options.resize.options.kernel = query.i
     }
 
-    if (query.bg && _isValidColor(query.bg)) {
-      options.resize.options.background = _normalizeColor(query.bg)
+    if (query.bg && util.isValidColor(query.bg)) {
+      options.resize.options.background = util.normalizeColor(query.bg)
     }
 
     if (query.fmt && Object.keys(_supportedOutputFormats).includes(query.fmt)) {
@@ -199,8 +131,8 @@ function imagist (opts = {}) {
       options.rotate = validator.toFloat(query.r)
     }
 
-    if (query.tint && _isValidColor(query.tint)) {
-      options.tint = _normalizeColor(query.tint)
+    if (query.tint && util.isValidColor(query.tint)) {
+      options.tint = util.normalizeColor(query.tint)
     }
 
     if (query.blur && validator.isFloat(query.blur, { min: 0.3, max: 1000 })) {
@@ -267,7 +199,7 @@ function imagist (opts = {}) {
     }
 
     if (!options.format) {
-      options.format = _findKey(_supportedOutputFormats, type => type === mimeType) || 'jpeg'
+      options.format = util.findKey(_supportedOutputFormats, type => type === mimeType) || 'jpeg'
     }
 
     responseMimeType = _supportedOutputFormats[options.format]
@@ -323,7 +255,7 @@ function imagist (opts = {}) {
     return false
   }
 
-  async function main (param, query) {
+  async function get (param, query) {
     if (!param) {
       throw new TypeError('Source path is missing.')
     }
@@ -347,50 +279,7 @@ function imagist (opts = {}) {
     return _processImage(reader, mimeType, query)
   }
 
-  function expressMiddleware () {
-    return (req, res, next) => {
-      const query = req.query
-      const param = req.params['0']
-
-      main(param, query)
-        .then(([stream, type]) => {
-          res.set('Content-Type', type)
-          stream.pipe(res)
-        })
-        .catch(next)
-    }
-  }
-
-  function koaMiddleware () {
-    return async (ctx) => {
-      const query = ctx.query
-      const param = ctx.params['0']
-
-      const [stream, type] = await main(param, query)
-
-      ctx.set('Content-Type', type)
-      ctx.body = stream
-    }
-  }
-
-  function fastifyMiddleware () {
-    return async (req, res) => {
-      const query = req.query
-      const param = req.params['*']
-
-      const [stream, type] = await main(param, query)
-
-      res.header('Content-Type', type)
-      res.send(stream)
-    }
-  }
-
-  return {
-    get: main,
-    express: expressMiddleware,
-    koa: koaMiddleware,
-    fastify: fastifyMiddleware
-  }
+  return { get }
 }
 
 module.exports = imagist

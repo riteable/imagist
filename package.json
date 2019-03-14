@@ -1,7 +1,7 @@
 {
   "name": "imagist",
   "version": "1.0.0",
-  "description": "Middleware for on-the-fly image processing.",
+  "description": "On-the-fly image optimization & manipulation middleware.",
   "main": "index.js",
   "dependencies": {
     "color": "^3.1.0",
