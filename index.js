@@ -146,7 +146,7 @@ function imagist (opts = {}) {
     }
 
     if (query.sharp) {
-      options.sharp[0] = true
+      options.sharpen[0] = true
     }
 
     if (query.neg) {
