@@ -81,6 +81,9 @@ function imagist (opts = {}) {
       greyscale: [false]
     }
 
+    let tint = util.color(query.tint)
+    let background = util.color(query.bg)
+
     if (query.w) {
       options.resize[0] = Math.abs(util.toInt(query.w)) || null
     }
@@ -105,8 +108,8 @@ function imagist (opts = {}) {
       options.resize[2].withoutEnlargement = false
     }
 
-    if (query.bg && util.isValidColor(query.bg)) {
-      options.resize[2].background = util.normalizeColor(query.bg)
+    if (background.validate()) {
+      options.resize[2].background = background.normalize()
     }
 
     if (query.fmt && Object.keys(_supportedOutputFormats).includes(query.fmt)) {
@@ -133,8 +136,8 @@ function imagist (opts = {}) {
       options.rotate[1].background = options.resize[2].background
     }
 
-    if (query.tint && util.isValidColor(query.tint)) {
-      options.tint[0] = util.normalizeColor(query.tint)
+    if (tint.validate()) {
+      options.tint[0] = tint.normalize()
     }
 
     if (query.blur && validator.isFloat(query.blur, { min: 0.3, max: 1000 })) {

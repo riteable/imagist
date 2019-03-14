@@ -1,9 +1,19 @@
-const color = require('color')
+const Color = require('color')
 
 function toInt (val) {
-  if (typeof val === 'string') {
-    val = parseInt(val, 10)
+  switch (typeof val) {
+    case 'object' :
+    case 'function' :
+    case 'undefined' :
+    case 'symbol' :
+      return 0
   }
+
+  if (typeof val === 'boolean') {
+    return val ? 1 : 0
+  }
+
+  val = parseInt(val, 10)
 
   if (isNaN(val)) {
     return 0
@@ -12,46 +22,89 @@ function toInt (val) {
   return val
 }
 
-function colorType (val) {
-  if (val.indexOf(',') > -1) {
-    return 'rgb'
+function color (val) {
+  let _isFormatted = false
+  let _isValidated = false
+  let _isNormalized = false
+  let _formatted = null
+  let _isValid = false
+  let _normalized = null
+
+  function format () {
+    if (_isFormatted) {
+      return _formatted
+    }
+
+    _isFormatted = true
+    _formatted = null
+
+    if (typeof val !== 'string') {
+      return _formatted
+    }
+
+    const rgba = val.trim().split(',').filter(v => v !== '')
+
+    if (val.indexOf(',') > -1) {
+      if (rgba.length === 3 || rgba.length === 4) {
+        _formatted = rgba
+          .map(v => parseFloat(v.trim(), 10))
+          .filter(v => !isNaN(v))
+      } else {
+        _formatted = null
+      }
+    } else if (val.length === 3 || val.length === 6) {
+      _formatted = '#' + val
+    }
+
+    return _formatted
   }
 
-  if (val.length === 3 || val.length === 6) {
-    return 'hex'
+  function validate () {
+    if (_isValidated) {
+      return _isValid
+    }
+
+    _isValidated = true
+
+    if (!_isFormatted) {
+      _formatted = format(val)
+    }
+
+    try {
+      Color(_formatted)
+      _isValid = true
+    } catch (err) {
+      _isValid = false
+    }
+
+    return _isValid
   }
 
-  return null
-}
+  function normalize () {
+    if (_isNormalized) {
+      return _normalized
+    }
 
-function isValidColor (val) {
-  const type = colorType(val)
+    _isNormalized = true
 
-  if (type === 'rgb') {
-    val = `rgb(${val})`
-  } else if (type === 'hex') {
-    val = '#' + val
+    if (!_isValidated) {
+      _isValid = validate(val)
+    }
+
+    if (_isValid) {
+      _normalized = Color(_formatted).object()
+    } else {
+      _normalized = null
+    }
+
+    return _normalized
   }
 
-  try {
-    color(val)
-  } catch (err) {
-    return false
+  return {
+    format,
+    validate,
+    normalize
   }
-
-  return true
-}
-
-function normalizeColor (val) {
-  const type = colorType(val)
-
-  if (type === 'rgb') {
-    val = val.split(',').map(v => parseFloat(v, 10))
-  } else if (type === 'hex') {
-    val = '#' + val
-  }
-
-  return color(val).object()
 }
 
 function findKey (obj, func) {
@@ -66,8 +119,6 @@ function findKey (obj, func) {
 
 module.exports = {
   toInt,
-  colorType,
-  isValidColor,
-  normalizeColor,
+  color,
   findKey
 }
