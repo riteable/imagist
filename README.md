@@ -180,7 +180,3 @@ The transformations below are available to use as query parameters when requesti
     - `'jpeg'`
     - `'png'`
     - `'webp'`
-
-## Tests
-
-No tests have been written yet.
