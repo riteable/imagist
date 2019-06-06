@@ -120,39 +120,31 @@ describe('Utility functions', () => {
       expect(util.color('-1,-2,-3').validate()).toBe(true)
       expect(util.color('1,2,3,-0.5').validate()).toBe(true)
     })
-
-    test('Return false if generally invalid input', () => {
-      expect(util.color('invalid').validate()).toBe(false)
-      expect(util.color('').validate()).toBe(false)
-      expect(util.color(null).validate()).toBe(false)
-      expect(util.color({}).validate()).toBe(false)
-      expect(util.color(() => {}).validate()).toBe(false)
-    })
-
-    test('Return false if invalid hex', () => {
-      expect(util.color('#fff').validate()).toBe(false)
-      expect(util.color('#ttt').validate()).toBe(false)
-      expect(util.color('#nononono').validate()).toBe(false)
-    })
-
-    test('Return false if invalid RGB(A)', () => {
-      expect(util.color(['255']).validate()).toBe(false)
-      expect(util.color(['0', '0', '0']).validate()).toBe(false)
-    })
   })
+
+  const black = { r: 0, g: 0, b: 0 }
 
   describe('color().normalize() should return RGB(A) color object, or null if invalid', () => {
     test('Return object if valid color', () => {
-      expect(util.color('0,0,0').normalize()).toEqual({ r: 0, g: 0, b: 0 })
-      expect(util.color('0,0,0,1').normalize()).toEqual({ r: 0, g: 0, b: 0 })
-      expect(util.color('0,0,0,0.5').normalize()).toEqual({ r: 0, g: 0, b: 0, alpha: 0.5 })
+      expect(util.color('0,0,0').normalize()).toEqual(black)
+      expect(util.color('0,0,0,1').normalize()).toEqual(black)
+      expect(util.color('0,0,0,0.5').normalize()).toEqual({ ...black, alpha: 0.5 })
       expect(util.color('fff').normalize()).toEqual({ r: 255, g: 255, b: 255 })
     })
 
-    test('Return null if invalid color', () => {
-      expect(util.color('invalid').normalize()).toBe(null)
-      expect(util.color('0,0').normalize()).toEqual(null)
-      expect(util.color('zzz').normalize()).toEqual(null)
+    test('Return black if invalid color and format', () => {
+      expect(util.color('invalid').normalize()).toEqual(black)
+      expect(util.color('#zzz').normalize()).toEqual(black)
+      expect(util.color('355,355').normalize()).toEqual(black)
+      expect(util.color(['355']).normalize()).toEqual(black)
+      expect(util.color(['276', '665', '999']).normalize()).toEqual(black)
+      expect(util.color({}).normalize()).toEqual(black)
+      expect(util.color([]).normalize()).toEqual(black)
+      expect(util.color(() => {}).normalize()).toEqual(black)
+    })
+
+    test('Return null if invalid hex color and format', () => {
+      expect(util.color('zzz').normalize()).toBe(null)
     })
   })
 
