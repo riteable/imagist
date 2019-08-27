@@ -136,7 +136,7 @@ function imagist (opts = {}) {
       options.rotate[1].background = options.resize[2].background
     }
 
-    if (tint.validate()) {
+    if (query.tint && tint.validate()) {
       options.tint[0] = tint.normalize()
     }
 
