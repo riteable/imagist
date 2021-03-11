@@ -251,7 +251,7 @@ function imagist (opts = {}) {
     return false
   }
 
-  async function get (param, query) {
+  async function get (param, query, headers = {}) {
     if (!param) {
       throw new TypeError('Source path is missing.')
     }
@@ -270,7 +270,7 @@ function imagist (opts = {}) {
       throw new TypeError('Host not allowed.')
     }
 
-    const stream = await mhttp.getStream({ url: url.href })
+    const stream = await mhttp.getStream({ url: url.href, headers })
     const [reader, mimeType] = await _streamMimeType(stream)
     return _processImage(reader, mimeType, query)
   }
