@@ -9,7 +9,7 @@
   "dependencies": {
     "color": "^3.1.3",
     "machinepack-http": "^7.0.3",
-    "sharp": "^0.23.4",
+    "sharp": "^0.30.5",
     "stream-mmmagic": "^2.2.0",
     "validator": "^11.1.0"
   },
